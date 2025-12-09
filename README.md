@@ -1,123 +1,152 @@
-# BSP & Linux Driver Lab
-
-## 📌 Description
-
-**BSP & Linux Driver Lab** est un projet pratique pour apprendre le développement de drivers Linux et la maîtrise du Board Support Package (BSP) sur plateformes embarquées comme **Raspberry Pi**. Il couvre l’ensemble du workflow embarqué : bootloader, kernel Linux, Device Tree, drivers, et applications userspace. Le projet utilise GitHub pour un suivi structuré via **labels, issues et workflows automatisés**.
 
 ---
 
-## 🎯 Objectifs
+# Embedded Sensor & Actuator Hub
 
-* Apprendre le développement de drivers Linux et l’intégration hardware.
-* Mettre en pratique sur matériel réel (GPIO, I2C, SPI…).
-* Suivre un workflow clair avec GitHub (issues, labels, CI/CD).
-* Créer un portfolio technique pour ingénieur BSP/Linux embarqué.
+## **Description**
 
----
+Le projet **Embedded Sensor & Actuator Hub** est un projet pratique pour apprendre le **développement de drivers Linux** sur matériel embarqué (Raspberry Pi ou BeagleBone).
+Il permet de :
 
-## ⚡ Fonctionnalités
+* Lire des capteurs I2C et SPI
+* Gérer des GPIO avec interruption
+* Exposer les données via char device (`/dev/sensor_hub`), sysfs et mmap
+* Implémenter des lectures périodiques avec timers/workqueues
+* Optionnel : transfert de données via DMA, USB ou réseau
 
-* **Bootloader** : U-Boot, configuration, debug UART, secure boot.
-* **Kernel Linux** : compilation, modules, debug, workqueues, mmap, DMA.
-* **Device Tree** : création d’overlays, nodes personnalisés, intégration hardware.
-* **Drivers Linux** : GPIO, I2C, SPI, USB, character devices, sysfs, procfs.
-* **Userspace** : applications C/Python pour interagir avec les drivers.
-* **Tests & Debug** : validation hardware/software, optimisation.
-* **GitHub Automation** : synchronisation labels et import des issues.
+Ce projet couvre **toutes les notions essentielles du développement de drivers Linux**, depuis la création d’un module kernel jusqu’à l’application utilisateur complète.
 
 ---
 
-## 🗂 Structure du projet
+## **Fonctionnalités**
+
+* Character device pour communication kernel ↔ utilisateur
+* Gestion des GPIO avec LED et bouton (interruption)
+* Drivers I2C pour capteurs de température et pression
+* Drivers SPI pour capteurs gyroscope/accéléromètre
+* Exposition des paramètres et données via sysfs et procfs
+* Accès direct au buffer via mmap
+* Lecture périodique asynchrone via timers/workqueues
+* Optionnel : transfert DMA pour accélération des lectures
+* Optionnel : transmission USB ou réseau vers un PC
+* Application utilisateur complète pour lire, configurer et visualiser les données
+
+---
+
+## **Matériel recommandé**
+
+* Raspberry Pi ou BeagleBone
+* Capteurs I2C : TMP102, BMP280
+* Capteur SPI : MPU-9250
+* LED et bouton GPIO
+* Optionnel : périphérique USB ou adaptateur réseau
+
+---
+
+## **Structure du projet**
 
 ```
-BSP-Linux-Driver-Lab/
+/sensor_hub
 │
-├── bootloader/         # Sources et scripts U-Boot
-├── kernel/             # Sources kernel, modules externes
-├── drivers/            # Drivers Linux (GPIO, I2C, SPI…)
-├── device-tree/        # Device Tree sources et overlays
-├── userspace/          # Applications C/Python pour tester les drivers
-├── .github/
-│   ├── labels.yml      # Labels GitHub
-│   ├── issues.json     # Issues backlog BSP
-│   └── workflows/
-│       ├── labels.yml        # Workflow pour synchroniser les labels
-│       └── import-issues.yml # Workflow pour importer les issues
+├── drivers/
+│   ├── sensor_hub.c            # Character device minimal
+│   ├── sensor_hub_gpio.c       # GPIO + ISR
+│   ├── sensor_hub_i2c.c        # Driver I2C
+│   ├── sensor_hub_spi.c        # Driver SPI
+│   ├── sensor_hub_sysfs.c      # sysfs / procfs
+│   ├── sensor_hub_mmap.c       # mmap
+│   ├── sensor_hub_timer.c      # Timers / Workqueues
+│   ├── sensor_hub_dma.c        # DMA (optionnel)
+│   └── sensor_hub_usb.c        # USB / réseau (optionnel)
+│
+├── user_app/
+│   └── sensor_hub_app.c        # Programme utilisateur (C ou Python)
+│
+├── Makefile
 └── README.md
 ```
 
 ---
 
-## 🚀 Installation & usage
+## **Installation**
 
-### 1️⃣ Cloner le repo
+1. Cloner le dépôt :
 
 ```bash
-git clone git@github.com:TON_UTILISATEUR/TON_REPO.git
-cd TON_REPO
+git clone https://github.com/<votre-repo>/sensor_hub.git
+cd sensor_hub
 ```
 
-### 2️⃣ Synchroniser les labels
-
-Le workflow `Sync Labels` se déclenche automatiquement lors d’un push. Vérifie dans **Actions → Sync Labels**.
-
-### 3️⃣ Importer les issues
-
-* Sur GitHub : **Actions → Import Issues → Run workflow**
-* Les issues seront créées automatiquement avec leurs labels.
-
-### 4️⃣ Compiler et tester
-
-* **Bootloader** :
+2. Compiler le module kernel :
 
 ```bash
-cd bootloader
-# Instructions pour compiler et tester U-Boot
+make
 ```
 
-* **Kernel Linux** :
+3. Charger le module :
 
 ```bash
-cd kernel
-make defconfig
-make -j$(nproc)
+sudo insmod drivers/sensor_hub.ko
 ```
 
-* **Drivers** :
+4. Créer le device file si nécessaire :
 
 ```bash
-cd drivers
-make modules
-sudo insmod <module>.ko
+sudo mknod /dev/sensor_hub c <major> 0
+sudo chmod 666 /dev/sensor_hub
 ```
 
-* **Userspace** :
+5. Vérifier les logs :
 
 ```bash
-cd userspace
-gcc app.c -o app
-./app
+dmesg | tail
 ```
 
 ---
 
-## 📚 Bonnes pratiques
+## **Utilisation**
 
-* Respecter l’arborescence pour faciliter le suivi GitHub.
-* Documenter chaque module, driver et application.
-* Utiliser labels et issues pour tracker les tâches et bugs.
-* Faire des commits clairs et descriptifs.
+* Lire/écrire dans le char device depuis un programme utilisateur :
+
+```bash
+./user_app/sensor_hub_app
+```
+
+* Accéder aux fichiers sysfs :
+
+```bash
+cat /sys/class/sensor_hub/temperature
+echo 25 > /sys/class/sensor_hub/threshold
+```
+
+* Utiliser mmap pour lecture directe (via programme utilisateur)
 
 ---
 
-## ✨ Contribution
+## **Roadmap / Livrables**
 
-* Fork → Crée une branche → Pull request
-* Respecte les labels et workflow GitHub
-* Documente toutes les modifications
+| Étape | Livrable                                   |
+| ----- | ------------------------------------------ |
+| 1     | Character device minimal (`sensor_hub.ko`) |
+| 2     | GPIO avec LED et bouton ISR                |
+| 3     | Capteurs I2C (TMP102, BMP280)              |
+| 4     | Capteurs SPI (MPU-9250)                    |
+| 5     | sysfs / procfs                             |
+| 6     | mmap                                       |
+| 7     | Timers / Workqueues                        |
+| 8     | DMA (optionnel)                            |
+| 9     | USB / réseau (optionnel)                   |
+| 10    | Programme utilisateur complet              |
 
 ---
 
-## 📖 Licence
+## **Tests**
 
-MIT License Fabrice KAYO
+* Utiliser `dmesg` pour vérifier le fonctionnement du module
+* Programmes tests pour chaque driver :
+
+  * `test_char.c`, `test_gpio.c`, `test_i2c.c`, `test_spi.c`
+* Vérifier lecture, écriture, mmap, timers et sysfs
+
+---
+
