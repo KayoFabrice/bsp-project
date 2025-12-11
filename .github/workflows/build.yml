@@ -21,7 +21,7 @@ jobs:
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 
       - name: Upload compiled module
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rpi-module
           path: '*.ko'
