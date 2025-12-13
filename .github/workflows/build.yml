@@ -40,6 +40,11 @@ jobs:
             -net user,hostfwd=tcp::2222-:22 -net nic \
             -nographic &
           sleep 30  # wait for QEMU to boot fully
+          echo "Waiting for QEMU SSH..."
+          until ssh -o StrictHostKeyChecking=no -p 2222 pi@localhost "echo ok" 2>/dev/null; do
+            sleep 5
+          done
+          echo "QEMU is ready!"
 
       # Deploy and insert the kernel module
       - name: Deploy and Insert Module
